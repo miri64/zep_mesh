@@ -62,7 +62,7 @@ def main():
             mesh.add_node(node)
             apps.append(app)
         for e in template.edges():
-            edge = (mesh.nodes()[e[0]], mesh.nodes()[e[1]])
+            edge = (list(mesh)[e[0]], list(mesh)[e[1]])
             mesh.add_edge(*edge)
 
     zep_server = Server(mesh=mesh, dump=args.dump_pcap)
