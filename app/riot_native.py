@@ -82,7 +82,8 @@ class RIOTNativeApp(BaseApplication):
         return self.name
 
     def start(self, args=[]):
-        command = "socat EXEC:'%s -zlp %u',end-close,stderr,pty TCP-L:%u,reuseaddr,fork" \
+
+        command = "socat EXEC:'%s -z [::1]\:%u\,[::1]\:17754 ',end-close,stderr,pty TCP-L:%u,reuseaddr,fork" \
                     % (self.filename, self.zep_port, self.terminal_port)
         try:
             p = subprocess.Popen(command, shell=True)
