@@ -89,7 +89,7 @@ class RIOTNativeApp(BaseApplication):
             self.pid = p.pid
             print("Started node at localhost:%u" % self.terminal_port, file=sys.stderr)
             match = self.input("ifconfig",
-                    "inet6 addr: (fe80:[0-9a-f:]+)/64  scope: local")
+                    "inet6 addr: (fe80:[0-9a-f:]+)  scope: local")
             if match:
                 self.link_local_addr = match.group(1).decode()
         except subprocess.CalledProcessError:
