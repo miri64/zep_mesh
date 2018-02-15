@@ -6,8 +6,8 @@ send packets of [wireshark's ZEP format][ZEP].
 
 Dependencies
 ------------
-You need a version of `socat` and `netcat` and the python library `networkx` to
-use this library.
+You need a version of `socat` and `netcat` and the python libraries
+`matplotlib`, `networkx`, and `pexpect` to use this library.
 
 Using ZEP Mesh with RIOT native
 -------------------------------
