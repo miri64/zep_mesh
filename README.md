@@ -4,7 +4,7 @@ ZEP Mesh
 This library allows to create an IEEE 802.15.4 mesh out of applications that
 send packets of [wireshark's ZEP format][ZEP].
 
-[ZEP]: https://code.wireshark.org/review/gitweb?p=wireshark.git;a=blob;f=epan/dissectors/packet-zep.c;h=8f3618a3a9cf990fc9fb334cdd918d898ec5dc2a;hb=HEAD#l23)
+[ZEP]: https://code.wireshark.org/review/gitweb?p=wireshark.git;a=blob;f=epan/dissectors/packet-zep.c;h=8f3618a3a9cf990fc9fb334cdd918d898ec5dc2a;hb=HEAD#l23
 
 Dependencies
 ------------
