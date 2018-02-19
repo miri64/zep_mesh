@@ -32,8 +32,6 @@ import time
 
 from .base import BaseApplication
 
-PYTERM_PATH = os.path.join(os.environ['RIOTBASE'], "dist/tools/pyterm/pyterm")
-
 reserved_ports = {}
 
 def get_free_port(start_port=4711, max_range=1000, family=socket.AF_INET,
