@@ -23,5 +23,5 @@ __copyright__   = "Copyright (C) 2016 Freie Universität Berlin"
 __license__     = "LGPLv2.1"
 __email__       = "m.lenders@fu-berlin.de"
 
-import app.base
-import app.riot_native
+from . import base
+from . import riot_native

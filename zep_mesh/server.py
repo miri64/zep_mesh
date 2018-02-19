@@ -29,10 +29,10 @@ import time
 import threading
 import networkx as nx
 
-import frontend.cli
-import node
-import pcap
-import zep
+from .frontend import cli
+from .node import Node
+from .pcap import PCAPWriterStdout
+from .zep import parse as parse_zep
 
 server_instance = None
 
@@ -61,8 +61,7 @@ class Server(threading.Thread):
             server_instance = threading.Thread.__new__(cls)
         return server_instance
 
-    def __init__(self, frontend=frontend.cli.CLI(), port=17754, mesh=None,
-                 dump=False):
+    def __init__(self, frontend=cli.CLI(), port=17754, mesh=None, dump=False):
         super(Server, self).__init__()
         self.socket = socket.socket(family=socket.AF_INET6, type=socket.SOCK_DGRAM)
         self.socket.bind(('', port))
@@ -85,7 +84,7 @@ class Server(threading.Thread):
                     neighbors = self.frontend.ask_list("What neighbors shall [%s]:%u have?" %
                                                        new.to_sockaddr(), to_port_int)
                     for neighbor in neighbors:
-                        neigh = node.Node("::1", neighbor)
+                        neigh = Node("::1", neighbor)
                         if neigh in self.mesh:
                             self.mesh.add_edge(new, neigh)
 
@@ -95,8 +94,9 @@ class Server(threading.Thread):
         with self.mesh_lock:
             for n in self.mesh.nodes():
                 n.application.start()
+        pcap = PCAPWriterStdout()
         if self.dump:
-            pcap.init()
+            pcap.start()
         while inputs:
             readable, writable, exceptional = select.select(inputs, outputs,
                                                             inputs)
@@ -106,10 +106,10 @@ class Server(threading.Thread):
                     if data:
                         # TODO: set LQI according to edge weight and check channel
                         if self.dump:
-                            time, buf = zep.parse(data)
+                            time, buf = parse_zep(data)
                             pcap.dump(time, buf)
                         with self.mesh_lock:
-                            new = node.Node(*sender[:2])
+                            new = Node(*sender[:2])
                             self.__add_to_mesh_if_new(new)
                             for neighbor in self.mesh.neighbors(new):
                                 s.sendto(data, neighbor.to_sockaddr())

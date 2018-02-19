@@ -28,10 +28,10 @@ import os
 import signal
 import sys
 
-from server import Server
-from app.riot_native import RIOTNativeApp
-from node import Node
-import config
+from zep_mesh.server import Server
+from zep_mesh.app.riot_native import RIOTNativeApp
+from zep_mesh.node import Node
+import zep_mesh.config
 
 import matplotlib.pyplot as plt
 
@@ -48,7 +48,7 @@ def signal_handler(signal, frame):
 
 def main():
     global apps, zep_server
-    mesh, args = config.load()
+    mesh, args = zep_mesh.config.load()
 
     if not args.input_file:
         template = mesh
@@ -67,7 +67,7 @@ def main():
 
     zep_server = Server(mesh=mesh, dump=args.dump_pcap)
     with zep_server.mesh_lock:
-        config.store_mesh("mesh.json", zep_server.mesh)
+        zep_mesh.config.store_mesh("mesh.json", zep_server.mesh)
     labels = {}
     for node in mesh.nodes():
         labels[node] = 'localhost:%u\n%s' % (node.application.terminal_port,

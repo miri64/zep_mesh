@@ -29,8 +29,7 @@ import networkx as nx
 from networkx.readwrite import json_graph
 import sys
 
-import app
-from node import Node
+from .node import Node
 
 def _default_json_dumper(obj):
     return getattr(obj.__class__, "to_json", json.JSONEncoder().default)(obj)
