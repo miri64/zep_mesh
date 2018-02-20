@@ -55,11 +55,12 @@ def get_free_port(start_port=4711, max_range=1000, family=socket.AF_INET,
 
 class RIOTNativeApp(BaseApplication):
     def __init__(self, filename, name, terminal_port = None, zep_port = None,
-                 *args, **kwargs):
+                 tap = None, *args, **kwargs):
         super(RIOTNativeApp, self).__init__(filename, *args, **kwargs)
         self.pid = None
         self.name = name
         self.link_local_addr = None
+        self.tap = tap
         if terminal_port:
             self.terminal_port = int(terminal_port)
         else:
@@ -80,9 +81,8 @@ class RIOTNativeApp(BaseApplication):
         return self.name
 
     def start(self, args=[]):
-
-        command = "socat EXEC:'%s -z [::1]\:%u\,[::1]\:17754 ',end-close,stderr,pty TCP-L:%u,reuseaddr,fork" \
-                    % (self.filename, self.zep_port, self.terminal_port)
+        command = "socat EXEC:'%s %s -z [::1]\:%u\,[::1]\:17754 ',end-close,stderr,pty TCP-L:%u,reuseaddr,fork" \
+                    % (self.filename, self.tap if self.tap else "", self.zep_port, self.terminal_port)
         try:
             p = subprocess.Popen(command, shell=True)
             self.pid = p.pid
