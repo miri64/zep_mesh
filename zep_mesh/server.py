@@ -55,6 +55,8 @@ def to_port_int(port_string):
     return port
 
 class Server(threading.Thread):
+    TERMINATION_STRING = b"!!!TERMINATE!!!"
+
     def __new__(cls, *args, **kwargs):
         global server_instance
         if server_instance == None:
@@ -64,8 +66,9 @@ class Server(threading.Thread):
     def __init__(self, frontend=cli.CLI(), port=17754, mesh=None, dump=False,
                  dump_file=None):
         super(Server, self).__init__()
+        self.port = port
         self.socket = socket.socket(family=socket.AF_INET6, type=socket.SOCK_DGRAM)
-        self.socket.bind(('', port))
+        self.socket.bind(('', self.port))
         self.frontend = frontend
         self.dump = dump or (type(dump_file) is str)
         self.dump_file = dump_file
@@ -76,6 +79,14 @@ class Server(threading.Thread):
             self.mesh = nx.Graph()
         self.mesh_lock = threading.RLock()
         self.start()
+
+    def __del__(self):
+        self.stop()
+
+    def stop(self):
+        s = socket.socket(family=socket.AF_INET6, type=socket.SOCK_DGRAM)
+        # send magic string
+        s.sendto(Server.TERMINATION_STRING, ("::1", self.port))
 
     def __add_to_mesh_if_new(self, new):
         if new not in self.mesh:
@@ -110,6 +121,10 @@ class Server(threading.Thread):
                 if s is self.socket:
                     data, sender = s.recvfrom(180)
                     if data:
+                        if data == Server.TERMINATION_STRING:
+                            # terminate server
+                            s.close()
+                            return
                         # TODO: set LQI according to edge weight and check channel
                         if self.dump:
                             time, buf = parse_zep(data)
