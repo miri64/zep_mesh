@@ -35,17 +35,30 @@ SIG = 0
 SNAPLEN = 0xffff
 NETWORK = 195       # 802.15.4 with FCS
 
-class PCAPWriterStdout(object):
+class PCAPWriter(object):
+    def __init__(self, filename):
+        assert(type(filename) is str)
+        self.file = open(filename, "wb")
+
+    def __del__(self):
+        self.file.close()
+
     def start(self):
-        sys.stdout.buffer.write(struct.pack('<LHHLLLL', MAGIC, MAJOR, MINOR,
-                                            ZONE, SIG, SNAPLEN, NETWORK))
+        self.file.write(struct.pack('<LHHLLLL', MAGIC, MAJOR, MINOR, ZONE,
+                                    SIG, SNAPLEN, NETWORK))
 
     def dump(self, t, pkt):
         sec = int(time.mktime(t.timetuple()))
         usec = t.microsecond
-        sys.stdout.buffer.write(struct.pack('<LLLL', sec, usec, len(pkt),
-                                            len(pkt)))
-        sys.stdout.flush()
+        self.file.write(struct.pack('<LLLL', sec, usec, len(pkt), len(pkt)))
+        self.file.flush()
         for byte in pkt:
-            sys.stdout.buffer.write(struct.pack('<B', byte))
-        sys.stdout.flush()
+            self.file.write(struct.pack('<B', byte))
+        self.file.flush()
+
+class PCAPWriterStdout(PCAPWriter):
+    def __init__(self):
+        self.file = sys.stdout.buffer
+
+    def __del__(self):
+        pass

@@ -31,7 +31,7 @@ import networkx as nx
 
 from .frontend import cli
 from .node import Node
-from .pcap import PCAPWriterStdout
+from .pcap import PCAPWriter, PCAPWriterStdout
 from .zep import parse as parse_zep
 
 server_instance = None
@@ -61,12 +61,14 @@ class Server(threading.Thread):
             server_instance = threading.Thread.__new__(cls)
         return server_instance
 
-    def __init__(self, frontend=cli.CLI(), port=17754, mesh=None, dump=False):
+    def __init__(self, frontend=cli.CLI(), port=17754, mesh=None, dump=False,
+                 dump_file=None):
         super(Server, self).__init__()
         self.socket = socket.socket(family=socket.AF_INET6, type=socket.SOCK_DGRAM)
         self.socket.bind(('', port))
         self.frontend = frontend
-        self.dump = dump
+        self.dump = dump or (type(dump_file) is str)
+        self.dump_file = dump_file
         time.sleep(0.1)
         if mesh != None:
             self.mesh = mesh
@@ -94,8 +96,12 @@ class Server(threading.Thread):
         with self.mesh_lock:
             for n in self.mesh.nodes():
                 n.application.start()
-        pcap = PCAPWriterStdout()
+        pcap = None
         if self.dump:
+            if self.dump_file is None:
+                pcap = PCAPWriterStdout()
+            else:
+                pcap = PCAPWriter(self.dump_file)
             pcap.start()
         while inputs:
             readable, writable, exceptional = select.select(inputs, outputs,
