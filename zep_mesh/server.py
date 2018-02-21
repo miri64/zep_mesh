@@ -106,7 +106,7 @@ class Server(threading.Thread):
         outputs = []
         with self.mesh_lock:
             for n in self.mesh.nodes():
-                n.application.start()
+                n.application.start(self.port)
         pcap = None
         if self.dump:
             if self.dump_file is None:

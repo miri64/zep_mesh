@@ -30,7 +30,7 @@ class BaseApplication(object):
     def __str__(self):
         return self.filename
 
-    def start(self, args):
+    def start(self, server_port, args):
         raise NotImplemented
 
     def input(self, i):

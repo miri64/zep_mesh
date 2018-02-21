@@ -80,9 +80,9 @@ class RIOTNativeApp(BaseApplication):
     def __str__(self):
         return self.name
 
-    def start(self, args=[]):
-        command = "socat EXEC:'%s %s -z [::1]\:%u\,[::1]\:17754 ',end-close,stderr,pty TCP-L:%u,reuseaddr,fork" \
-                    % (self.filename, self.tap if self.tap else "", self.zep_port, self.terminal_port)
+    def start(self, server_port=17754, args=[]):
+        command = "socat EXEC:'gdb -ex run --args %s %s -z [::1]\:%u\,[::1]\:%u ',end-close,stderr,pty TCP-L:%u,reuseaddr,fork" \
+                    % (self.filename, self.tap if self.tap else "", self.zep_port, self.server_port, self.terminal_port)
         try:
             p = subprocess.Popen(command, shell=True)
             self.pid = p.pid
