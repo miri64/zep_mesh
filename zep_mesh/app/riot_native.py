@@ -59,7 +59,7 @@ class RIOTNativeApp(BaseApplication):
         super(RIOTNativeApp, self).__init__(filename, *args, **kwargs)
         self.pid = None
         self.name = name
-        self.link_local_addr = None
+        self._link_local_addr = None
         self.tap = tap
         if terminal_port:
             self.terminal_port = int(terminal_port)
@@ -87,16 +87,23 @@ class RIOTNativeApp(BaseApplication):
             p = subprocess.Popen(command, shell=True)
             self.pid = p.pid
             print("Started node at localhost:%u" % self.terminal_port, file=sys.stderr)
-            match = self.input("ifconfig",
-                    "inet6 addr: (fe80:[0-9a-f:]+)  scope: local")
-            if match:
-                self.link_local_addr = match.group(1).decode()
         except subprocess.CalledProcessError:
             sys.exit(1)
 
+    @property
+    def link_local_addr(self):
+        if self._link_local_addr is None:
+            try:
+                match = self.input("ifconfig",
+                        "inet6 addr: (fe80:[0-9a-f:]+)  scope: local")
+                if match:
+                    self._link_local_addr = match.group(1).decode()
+            except:
+                return None
+        return self._link_local_addr
+
     def input(self, inp, exp_outp):
         child = pexpect.spawn("nc localhost %u" % self.terminal_port, timeout=1)
-        child.expect("All up, running the shell now")
         child.sendline(inp)
         child.expect(exp_outp)
         match = child.match
