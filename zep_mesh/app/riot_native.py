@@ -55,14 +55,12 @@ def get_free_port(start_port=4711, max_range=1000, family=socket.AF_INET,
 
 class RIOTNativeApp(BaseApplication):
     def __init__(self, filename, name, terminal_port = None, zep_port = None,
-                 tap = None, gdb_port=None, *args, **kwargs):
+                 tap = None, *args, **kwargs):
         super(RIOTNativeApp, self).__init__(filename, *args, **kwargs)
         self.pid = None
         self.name = name
         self._link_local_addr = None
         self.tap = tap
-        self.gdb_port = gdb_port
-        self.gdb_pid = None
         if terminal_port:
             self.terminal_port = int(terminal_port)
         else:
@@ -73,17 +71,11 @@ class RIOTNativeApp(BaseApplication):
             self.zep_port = get_free_port(family=socket.AF_INET6,
                                           type=socket.SOCK_DGRAM)
 
-    @staticmethod
-    def _hard_kill(port, pid)
-        command = 'kill -9 %u' % (self.pid)
-        subprocess.call(command, stderr=subprocess.DEVNULL, shell=True)
-        self.pid = None
-
     def __del__(self):
         if self.pid:
-            RIOTNativeApp._hard_kill(self.pid)
-        if self.gdb_pid:
-            self.gdb_pid.terminate()
+            command = 'kill -9 %u' % (self.pid)
+            subprocess.call(command, stderr=subprocess.PIPE, shell=True)
+            self.pid = None
 
     def __str__(self):
         return self.name
@@ -95,13 +87,6 @@ class RIOTNativeApp(BaseApplication):
             p = subprocess.Popen(command, shell=True)
             self.pid = p.pid
             print("Started node at localhost:%u" % self.terminal_port, file=sys.stderr)
-            if self.gdb_port is not None:
-                p = subprocess.Popen(["gdbserver", "--attach",
-                                      "localhost:%u" % self.gdb_port,
-                                      str(self.pid)])
-                self.gdb_pid = p.pid
-                print("Started debug server for localhost:%u at localhost:%u" %
-                      (self.terminal_port, self.gdb_port), file=sys.stderr)
         except subprocess.CalledProcessError:
             sys.exit(1)
 
