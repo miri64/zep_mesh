@@ -60,6 +60,7 @@ class RIOTNativeApp(BaseApplication):
         self.pid = None
         self.name = name
         self._link_local_addr = None
+        self._hwaddr = None
         self.tap = tap
         if terminal_port:
             self.terminal_port = int(terminal_port)
@@ -101,6 +102,24 @@ class RIOTNativeApp(BaseApplication):
             except:
                 return None
         return self._link_local_addr
+
+    @property
+    def hwaddr(self):
+        if self._hwaddr is None:
+            try:
+                child = pexpect.spawn("nc localhost %u" % self.terminal_port,
+                                      timeout=1)
+                child.sendline("ifconfig")
+                child.expect("HWaddr: ([0-9a-f:]+)(.*Long HWaddr: ([0-9a-f:]+))?")
+                addr_match = child.match
+                child.expect("Source address length: (\d+)")
+                if int(child.match.group(1)) == 8:
+                    self._hwaddr = addr_match.group(3).decode()
+                else:
+                    self._hwaddr = addr_match.group(1).decode()
+            except:
+                return None
+        return self._hwaddr
 
     def input(self, inp, exp_outp):
         child = pexpect.spawn("nc localhost %u" % self.terminal_port, timeout=1)
