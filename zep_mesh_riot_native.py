@@ -70,8 +70,13 @@ def main():
         zep_mesh.config.store_mesh("mesh.json", zep_server.mesh)
     labels = {}
     for node in mesh.nodes():
+        link_local_addr = None
+
+        if (node.applications.netifs is not None) and \
+           (len(node.applications.netifs) > 0):
+            link_local_addr = node.applications.netifs[0].link_local_addr
         labels[node] = 'localhost:%u\n%s' % (node.application.terminal_port,
-                                             node.application.link_local_addr)
+                                             link_local_addr)
     pos = nx.spring_layout(mesh)
     n = nx.draw_networkx_nodes(mesh, pos, labels=labels, font_size=10, node_color='w', node_size=100)
     n.set_edgecolor('gray')

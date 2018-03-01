@@ -54,13 +54,68 @@ def get_free_port(start_port=4711, max_range=1000, family=socket.AF_INET,
                     sys.exit(1)
 
 class RIOTNativeApp(BaseApplication):
+    class Netif(object):
+        def __init__(self, application, id):
+            self.application = application
+            if type(id) is bytes:
+                self.id = id.decode()
+            else:
+                self.id = str(id)
+            self._link_local_addr = None
+            self._hwaddr = None
+
+        def __str__(self):
+            return "<%s>:%s" (str(self.application), str(self.id))
+
+        @property
+        def link_local_addr(self):
+            if self._link_local_addr is None:
+                try:
+                    match = self.application.input(
+                            "ifconfig %s" % self.id,
+                            "inet6 addr: (fe80:[0-9a-f:]+)  scope: local"
+                        )
+                    if match:
+                        self._link_local_addr = match.group(1).decode()
+                except:
+                    return None
+            return self._link_local_addr
+
+        @property
+        def hwaddr(self):
+            if self._hwaddr is None:
+                try:
+                    child = pexpect.spawn(
+                            "nc localhost %u" % self.application.terminal_port,
+                            timeout=1
+                        )
+                    child.sendline("ifconfig %s" % self.id)
+                    child.expect(
+                            "HWaddr: ([0-9a-f:]+)(.*Long HWaddr: ([0-9a-f:]+))?"
+                        )
+                    addr_match = child.match
+                    child.expect("Source address length: (\d+)")
+                    if int(child.match.group(1)) == 8:
+                        self._hwaddr = addr_match.group(3).decode()
+                    else:
+                        self._hwaddr = addr_match.group(1).decode()
+                except:
+                    return None
+            return self._hwaddr
+
+        def to_json(self):
+            d = { 'id': self.id }
+            if self.link_local_addr:
+                d["link_local_addr"] = self.link_local_addr
+            if self.hwaddr:
+                d["hwaddr"] = self.hwaddr
+
     def __init__(self, filename, name, terminal_port = None, zep_port = None,
                  tap = None, *args, **kwargs):
         super(RIOTNativeApp, self).__init__(filename, *args, **kwargs)
         self.pid = None
         self.name = name
-        self._link_local_addr = None
-        self._hwaddr = None
+        self._netifs = None
         self.tap = tap
         if terminal_port:
             self.terminal_port = int(terminal_port)
@@ -92,34 +147,22 @@ class RIOTNativeApp(BaseApplication):
             sys.exit(1)
 
     @property
-    def link_local_addr(self):
-        if self._link_local_addr is None:
-            try:
-                match = self.input("ifconfig",
-                        "inet6 addr: (fe80:[0-9a-f:]+)  scope: local")
-                if match:
-                    self._link_local_addr = match.group(1).decode()
-            except:
-                return None
-        return self._link_local_addr
-
-    @property
-    def hwaddr(self):
-        if self._hwaddr is None:
+    def netifs(self):
+        if self._netifs is None:
             try:
                 child = pexpect.spawn("nc localhost %u" % self.terminal_port,
                                       timeout=1)
                 child.sendline("ifconfig")
-                child.expect("HWaddr: ([0-9a-f:]+)(.*Long HWaddr: ([0-9a-f:]+))?")
-                addr_match = child.match
-                child.expect("Source address length: (\d+)")
-                if int(child.match.group(1)) == 8:
-                    self._hwaddr = addr_match.group(3).decode()
-                else:
-                    self._hwaddr = addr_match.group(1).decode()
+                self._netifs = []
+                while True:
+                    child.expect("Iface\s+(\d+)")
+                    self._netifs.append(
+                            RIOTNativeApp.Netif(self, child.match.group(1))
+                        )
             except:
-                return None
-        return self._hwaddr
+                if len(self._netifs) == 0:
+                    self._netifs = None
+        return self._netifs
 
     def input(self, inp, exp_outp):
         child = pexpect.spawn("nc localhost %u" % self.terminal_port, timeout=1)
@@ -134,7 +177,7 @@ class RIOTNativeApp(BaseApplication):
               'filename': self.filename, 'name': self.name,
               'zep_port': self.zep_port }
 
-        if self.link_local_addr:
-            d['link_local_addr'] = self.link_local_addr
+        if self.netifs:
+            d['netifs'] = [netif.to_json() for netif in self.netifs]
 
         return d
